@@ -11,6 +11,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.encoding import smart_str, force_unicode
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 
 if hasattr(settings, 'USE_CPICKLE'):
     warnings.warn("The USE_CPICKLE options is now obsolete. cPickle will always "
@@ -214,12 +215,28 @@ class BaseEncryptedNumberField(BaseEncryptedField):
         )
 
 
+def validate_type(_type):
+    VERBOSE_TYPE = {int: 'integer', float: 'number', long}
+    def is_type(value):
+        print 'Validating %r' % value
+        #if value == '' or value is None:
+        #    return
+        #try:
+        #    _type(value)
+        #except ValueError:
+        #    ValidationError(_('Please enter an %s') %
+        #                                VERBOSE_TYPE.get(_type, _type.__name__)
+    return is_type    
+
 class EncryptedIntField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
     max_raw_length = len(str(-sys.maxint - 1))
     number_type = int
     format_string = "%d"
 
+    def __init__(self, *args, **kwargs):
+        kwargs['validators'] = validate_type(int)
+        super(EncryptedIntField, self).__init__(*args, **kwargs)
 
 class EncryptedLongField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
@@ -230,6 +247,9 @@ class EncryptedLongField(BaseEncryptedNumberField):
     def get_internal_type(self):
         return 'TextField'
 
+    def __init__(self, *args, **kwargs):
+        kwargs['validators'] = validate_type(int)
+        super(EncryptedIntField, self).__init__(*args, **kwargs)
 
 class EncryptedFloatField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
