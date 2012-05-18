@@ -179,6 +179,18 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     date_class = datetime.datetime
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
 
+def validate_type(_type):
+    VERBOSE_TYPE = {int: 'n integer', float: ' number', long: 'n integer'}
+    def is_type(value):
+        print 'Validating %r' % value
+        #if value == '' or value is None:
+        #    return
+        #try:
+        #    _type(value)
+        #except ValueError:
+        #    ValidationError(_('Please enter a%s') %
+        #                                VERBOSE_TYPE.get(_type, _type.__name__)
+    return is_type
 
 class BaseEncryptedNumberField(BaseEncryptedField):
     # Do NOT define a __metaclass__ for this - it's abstract.
@@ -186,6 +198,7 @@ class BaseEncryptedNumberField(BaseEncryptedField):
     def __init__(self, *args, **kwargs):
         if self.max_raw_length:
             kwargs['max_length'] = self.max_raw_length
+        kwargs['validators'] = validate_type(self.number_type)
         super(BaseEncryptedNumberField, self).__init__(*args, **kwargs)
 
     def get_internal_type(self):
@@ -215,28 +228,11 @@ class BaseEncryptedNumberField(BaseEncryptedField):
         )
 
 
-def validate_type(_type):
-    VERBOSE_TYPE = {int: 'integer', float: 'number', long}
-    def is_type(value):
-        print 'Validating %r' % value
-        #if value == '' or value is None:
-        #    return
-        #try:
-        #    _type(value)
-        #except ValueError:
-        #    ValidationError(_('Please enter an %s') %
-        #                                VERBOSE_TYPE.get(_type, _type.__name__)
-    return is_type    
-
 class EncryptedIntField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
     max_raw_length = len(str(-sys.maxint - 1))
     number_type = int
     format_string = "%d"
-
-    def __init__(self, *args, **kwargs):
-        kwargs['validators'] = validate_type(int)
-        super(EncryptedIntField, self).__init__(*args, **kwargs)
 
 class EncryptedLongField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
@@ -246,10 +242,6 @@ class EncryptedLongField(BaseEncryptedNumberField):
 
     def get_internal_type(self):
         return 'TextField'
-
-    def __init__(self, *args, **kwargs):
-        kwargs['validators'] = validate_type(int)
-        super(EncryptedIntField, self).__init__(*args, **kwargs)
 
 class EncryptedFloatField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
