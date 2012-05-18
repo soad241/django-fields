@@ -222,7 +222,7 @@ class BaseEncryptedNumberField(BaseEncryptedField):
 
     # def get_prep_value(self, value):
     def get_db_prep_value(self, value, connection=None, prepared=False):
-        if value is not None:
+        if value != '':
             number_text = self.format_string % value
         else:
             number_text = None
