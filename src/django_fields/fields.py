@@ -198,7 +198,7 @@ class BaseEncryptedNumberField(BaseEncryptedField):
     def __init__(self, *args, **kwargs):
         if self.max_raw_length:
             kwargs['max_length'] = self.max_raw_length
-        kwargs['validators'] = validate_type(self.number_type)
+        kwargs['validators'] = [validate_type(self.number_type)]
         super(BaseEncryptedNumberField, self).__init__(*args, **kwargs)
 
     def get_internal_type(self):
