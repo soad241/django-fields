@@ -179,18 +179,17 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     date_class = datetime.datetime
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
 
-def validate_type(_type):
-    VERBOSE_TYPE = {int: 'n integer', float: ' number', long: 'n integer'}
-    def is_type(value):
-        print 'Validating %r' % value
-        #if value == '' or value is None:
-        #    return
-        #try:
-        #    _type(value)
-        #except ValueError:
-        #    ValidationError(_('Please enter a%s') %
-        #                                VERBOSE_TYPE.get(_type, _type.__name__)
-    return is_type
+def validate_int(value):
+    if not value.is_numeric():
+        ValidationError(_('Please enter an integer'))
+
+def validate_float(value):
+    try:
+        float(value)
+    except ValueError:
+        ValidationError(_('Please enter a number'))
+
+VALIDATORS = {int: [validate_int], long: [validate_int], float: [validate_float]}
 
 class BaseEncryptedNumberField(BaseEncryptedField):
     # Do NOT define a __metaclass__ for this - it's abstract.
@@ -198,8 +197,10 @@ class BaseEncryptedNumberField(BaseEncryptedField):
     def __init__(self, *args, **kwargs):
         if self.max_raw_length:
             kwargs['max_length'] = self.max_raw_length
-        print kwargs.get('validators', 'No validators')
-        #kwargs['validators'] = [validate_type(self.number_type)]
+        if kwargs.get('validators'):
+            kwargs['validators'] += VALIDATORS[self.number_type]
+        else:
+            kwargs['validators'] = VALIDATORS[self.number_type]
         super(BaseEncryptedNumberField, self).__init__(*args, **kwargs)
 
     def get_internal_type(self):
@@ -221,7 +222,10 @@ class BaseEncryptedNumberField(BaseEncryptedField):
 
     # def get_prep_value(self, value):
     def get_db_prep_value(self, value, connection=None, prepared=False):
-        number_text = self.format_string % value
+        if value is not None:
+            number_text = self.format_string % value
+        else:
+            number_text = None
         return super(BaseEncryptedNumberField, self).get_db_prep_value(
             number_text,
             connection=connection,
