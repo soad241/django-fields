@@ -192,11 +192,16 @@ class BaseEncryptedNumberField(BaseEncryptedField):
 
     def to_python(self, value):
         # value is either an int or a string of an integer
-        if isinstance(value, self.number_type):
+        
+        if value in fields.EMPTY_VALUES:
             number = value
-        else:
-            number_text = super(BaseEncryptedNumberField, self).to_python(value)
-            number = self.number_type(number_text)
+        else:    
+            if isinstance(value, self.number_type):
+                number = value
+            else:
+                number_text =\
+                        super(BaseEncryptedNumberField, self).to_python(value)
+                number = self.number_type(number_text)
         return number
 
     # def get_prep_value(self, value):
