@@ -222,10 +222,12 @@ class BaseEncryptedNumberField(BaseEncryptedField):
 
     # def get_prep_value(self, value):
     def get_db_prep_value(self, value, connection=None, prepared=False):
+        if value == '' and not self.null:
+            ValueError(_('This fied cannot be NULL'))
         if value != '':
             number_text = self.format_string % value
         else:
-            number_text = None
+            number_text = ''
         return super(BaseEncryptedNumberField, self).get_db_prep_value(
             number_text,
             connection=connection,
