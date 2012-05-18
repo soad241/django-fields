@@ -217,7 +217,10 @@ class BaseEncryptedNumberField(BaseEncryptedField):
             else:
                 number_text =\
                         super(BaseEncryptedNumberField, self).to_python(value)
-                number = self.number_type(number_text)
+                if number_text in fields.EMPTY_VALUES:
+                    number = None
+                else:
+                    number = self.number_type(number_text)
         return number
 
     # def get_prep_value(self, value):
