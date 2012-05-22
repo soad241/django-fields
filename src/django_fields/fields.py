@@ -181,13 +181,13 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
 
 def validate_int(value):
     if not value.is_numeric():
-        ValidationError(_('Please enter an integer'))
+        raise ValidationError(_('Please enter an integer'))
 
 def validate_float(value):
     try:
         float(value)
     except ValueError:
-        ValidationError(_('Please enter a number'))
+        raise ValidationError(_('Please enter a number'))
 
 VALIDATORS = {int: [validate_int], long: [validate_int], float: [validate_float]}
 
