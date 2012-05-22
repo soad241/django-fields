@@ -100,7 +100,6 @@ class EncryptedCharField(BaseEncryptedField):
         return "CharField"
 
     def formfield(self, **kwargs):
-        import django.forms
         defaults = {'max_length': self.unencrypted_length,
                     'form_class': django.forms.CharField}
         defaults.update(kwargs)
@@ -174,7 +173,6 @@ class EncryptedDateField(BaseEncryptedDateField):
     max_raw_length = 10  # YYYY:MM:DD
 
     def formfield(self, **kwargs):
-        import django.forms
         defaults = {'form_class': django.forms.DateField}
         defaults.update(kwargs)
         return super(EncryptedDateField, self).formfield(**defaults)
@@ -190,7 +188,6 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
 
     def formfield(self, **kwargs):
-        import django.forms
         defaults = {'form_class': django.forms.DateTimeField}
         defaults.update(kwargs)
         return super(EncryptedDateTimeField, self).formfield(**defaults)
@@ -226,24 +223,12 @@ class BaseEncryptedNumberField(BaseEncryptedField):
 
     # def get_prep_value(self, value):
     def get_db_prep_value(self, value, connection=None, prepared=False):
-        if value == '' and not self.null:
-            raise ValidationError(_('This fied cannot be NULL'))
-        if value != '':
-            number_text = self.format_string % value
-        else:
-            number_text = ''
-        try:
-            number = self.number_type(number_text)
-        except ValueError:
-            raise ValidationError("Error validating foorm")
+        number_text = None if value is None else self.format_string % value
         return super(BaseEncryptedNumberField, self).get_db_prep_value(
             number_text,
             connection=connection,
             prepared=prepared,
         )
-
-
-
 
 class EncryptedIntField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
@@ -254,7 +239,6 @@ class EncryptedIntField(BaseEncryptedNumberField):
         return "EncryptedIntField"
 
     def formfield(self, **kwargs):
-        import django.forms
         defaults = {'form_class': django.forms.IntegerField}
         defaults.update(kwargs)
         return super(EncryptedIntField, self).formfield(**defaults)
@@ -265,7 +249,6 @@ class EncryptedLongField(BaseEncryptedNumberField):
     number_type = long
     format_string = "%d"
     def formfield(self, **kwargs):
-        import django.forms
         defaults = {'form_class': django.forms.IntegerField}
         defaults.update(kwargs)
         return super(EncryptedLongField, self).formfield(**defaults)
@@ -283,7 +266,6 @@ class EncryptedFloatField(BaseEncryptedNumberField):
         return "EncryptedFloatField"
 
     def formfield(self, **kwargs):
-        import django.forms
         defaults = {'form_class': django.forms.FloatField}
         defaults.update(kwargs)
         return super(EncryptedFloatField, self).formfield(**defaults)
@@ -335,8 +317,7 @@ class EncryptedEmailField(BaseEncryptedField):
         return "CharField"
 
     def formfield(self, **kwargs):
-        from django.forms import EmailField
-        defaults = {'form_class': EmailField, 'max_length': self.unencrypted_length}
+        defaults = {'form_class': forms.EmailField, 'max_length': self.unencrypted_length}
         defaults.update(kwargs)
         return super(EncryptedEmailField, self).formfield(**defaults)
 
