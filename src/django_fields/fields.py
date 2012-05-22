@@ -184,7 +184,7 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     # FIXME:  This doesn't handle time zones, but Python doesn't really either.
     __metaclass__ = models.SubfieldBase
     form_field = forms.DateTimeField
-    form_widget = widgets.AdminDateTimeWidget
+    form_widget = widgets.AdminSplitDateTime
     save_format = "%Y:%m:%d:%H:%M:%S:%f"
     date_class = datetime.datetime
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
