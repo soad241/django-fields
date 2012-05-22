@@ -215,7 +215,7 @@ class BaseEncryptedNumberField(BaseEncryptedField):
             else:
                 number_text =\
                         super(BaseEncryptedNumberField, self).to_python(value)
-                if number_text in fields.EMPTY_VALUES or number == 'None':
+                if number_text in fields.EMPTY_VALUES or number_text == 'None':
                     number = None
                 else:
                     number = self.number_type(number_text)
