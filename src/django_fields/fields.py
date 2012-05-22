@@ -47,8 +47,8 @@ class BaseEncryptedField(models.Field):
         if mod > 0:
             max_length += self.cipher.block_size - mod
         kwargs['max_length'] = max_length * 2 + len(self.prefix)
-
-        models.Field.__init__(self, *args, **kwargs)
+        super(BaseEncryptedField, self).__init__(*args, **kwargs)
+        #models.Field.__init__(self, *args, **kwargs)
 
     def _is_encrypted(self, value):
         return isinstance(value, basestring) and value.startswith(self.prefix)
@@ -100,7 +100,9 @@ class EncryptedCharField(BaseEncryptedField):
         return "CharField"
 
     def formfield(self, **kwargs):
-        defaults = {'max_length': self.max_length}
+        import django.forms
+        defaults = {'max_length': self.unencrypted_length,
+                    'form_class': django.forms.CharField}
         defaults.update(kwargs)
         return super(EncryptedCharField, self).formfield(**defaults)
 
@@ -144,6 +146,8 @@ class BaseEncryptedDateField(BaseEncryptedField):
                 date_value = value
             else:
                 date_text = super(BaseEncryptedDateField, self).to_python(value)
+                if date_text == 'None':
+                    return None
                 date_value = self.date_class(*map(int, date_text.split(':')))
         return date_value
 
@@ -169,6 +173,12 @@ class EncryptedDateField(BaseEncryptedDateField):
     date_class = datetime.date
     max_raw_length = 10  # YYYY:MM:DD
 
+    def formfield(self, **kwargs):
+        import django.forms
+        defaults = {'form_class': django.forms.DateField}
+        defaults.update(kwargs)
+        return super(EncryptedDateField, self).formfield(**defaults)
+
 
 class EncryptedDateTimeField(BaseEncryptedDateField):
     # FIXME:  This doesn't handle time zones, but Python doesn't really either.
@@ -179,19 +189,13 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     date_class = datetime.datetime
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
 
-def validate_int(value):
-    print 'Validating int: %r' % value
-    if not value.is_numeric():
-        raise ValidationError(_('Please enter an integer'))
+    def formfield(self, **kwargs):
+        import django.forms
+        defaults = {'form_class': django.forms.DateTimeField}
+        defaults.update(kwargs)
+        return super(EncryptedDateTimeField, self).formfield(**defaults)
 
-def validate_float(value):
-    print 'Validating float: %r' % value
-    try:
-        float(value)
-    except ValueError:
-        raise ValidationError(_('Please enter a number'))
 
-VALIDATORS = {int: [validate_int], long: [validate_int], float: [validate_float]}
 
 class BaseEncryptedNumberField(BaseEncryptedField):
     # Do NOT define a __metaclass__ for this - it's abstract.
@@ -199,19 +203,13 @@ class BaseEncryptedNumberField(BaseEncryptedField):
     def __init__(self, *args, **kwargs):
         if self.max_raw_length:
             kwargs['max_length'] = self.max_raw_length
-        if kwargs.get('validators'):
-            kwargs['validators'] += VALIDATORS[self.number_type]
-        else:
-            kwargs['validators'] = VALIDATORS[self.number_type]
-        print [val.__name__ for val in kwargs['validators']]
         super(BaseEncryptedNumberField, self).__init__(*args, **kwargs)
 
     def get_internal_type(self):
         return 'CharField'
 
     def to_python(self, value):
-        # value is either an int or a string of an integer
-        
+        # value is either an int or a string of an integer        
         if value in fields.EMPTY_VALUES:
             number = value
         else:    
@@ -229,11 +227,15 @@ class BaseEncryptedNumberField(BaseEncryptedField):
     # def get_prep_value(self, value):
     def get_db_prep_value(self, value, connection=None, prepared=False):
         if value == '' and not self.null:
-            ValueError(_('This fied cannot be NULL'))
+            raise ValidationError(_('This fied cannot be NULL'))
         if value != '':
             number_text = self.format_string % value
         else:
             number_text = ''
+        try:
+            number = self.number_type(number_text)
+        except ValueError:
+            raise ValidationError("Error validating foorm")
         return super(BaseEncryptedNumberField, self).get_db_prep_value(
             number_text,
             connection=connection,
@@ -241,17 +243,32 @@ class BaseEncryptedNumberField(BaseEncryptedField):
         )
 
 
+
+
 class EncryptedIntField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
     max_raw_length = len(str(-sys.maxint - 1))
     number_type = int
     format_string = "%d"
+    def get_internal_type(self):
+        return "EncryptedIntField"
+
+    def formfield(self, **kwargs):
+        import django.forms
+        defaults = {'form_class': django.forms.IntegerField}
+        defaults.update(kwargs)
+        return super(EncryptedIntField, self).formfield(**defaults)
 
 class EncryptedLongField(BaseEncryptedNumberField):
     __metaclass__ = models.SubfieldBase
     max_raw_length = None  # no limit
     number_type = long
     format_string = "%d"
+    def formfield(self, **kwargs):
+        import django.forms
+        defaults = {'form_class': django.forms.IntegerField}
+        defaults.update(kwargs)
+        return super(EncryptedLongField, self).formfield(**defaults)
 
     def get_internal_type(self):
         return 'TextField'
@@ -262,6 +279,14 @@ class EncryptedFloatField(BaseEncryptedNumberField):
     number_type = float
     # If this format is too long for some architectures, change it.
     format_string = "%0.66f"
+    def get_internal_type(self):
+        return "EncryptedFloatField"
+
+    def formfield(self, **kwargs):
+        import django.forms
+        defaults = {'form_class': django.forms.FloatField}
+        defaults.update(kwargs)
+        return super(EncryptedFloatField, self).formfield(**defaults)
 
 
 class PickleField(models.TextField):
