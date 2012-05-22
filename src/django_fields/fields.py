@@ -101,7 +101,7 @@ class EncryptedCharField(BaseEncryptedField):
 
     def formfield(self, **kwargs):
         defaults = {'max_length': self.unencrypted_length,
-                    'form_class': django.forms.CharField}
+                    'form_class': forms.CharField}
         defaults.update(kwargs)
         return super(EncryptedCharField, self).formfield(**defaults)
 
@@ -173,7 +173,7 @@ class EncryptedDateField(BaseEncryptedDateField):
     max_raw_length = 10  # YYYY:MM:DD
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': django.forms.DateField}
+        defaults = {'form_class': forms.DateField}
         defaults.update(kwargs)
         return super(EncryptedDateField, self).formfield(**defaults)
 
@@ -188,7 +188,7 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': django.forms.DateTimeField}
+        defaults = {'form_class': forms.DateTimeField}
         defaults.update(kwargs)
         return super(EncryptedDateTimeField, self).formfield(**defaults)
 
@@ -239,7 +239,7 @@ class EncryptedIntField(BaseEncryptedNumberField):
         return "EncryptedIntField"
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': django.forms.IntegerField}
+        defaults = {'form_class': forms.IntegerField}
         defaults.update(kwargs)
         return super(EncryptedIntField, self).formfield(**defaults)
 
@@ -249,7 +249,7 @@ class EncryptedLongField(BaseEncryptedNumberField):
     number_type = long
     format_string = "%d"
     def formfield(self, **kwargs):
-        defaults = {'form_class': django.forms.IntegerField}
+        defaults = {'form_class': forms.IntegerField}
         defaults.update(kwargs)
         return super(EncryptedLongField, self).formfield(**defaults)
 
@@ -266,7 +266,7 @@ class EncryptedFloatField(BaseEncryptedNumberField):
         return "EncryptedFloatField"
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': django.forms.FloatField}
+        defaults = {'form_class': forms.FloatField}
         defaults.update(kwargs)
         return super(EncryptedFloatField, self).formfield(**defaults)
 
