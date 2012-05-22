@@ -243,9 +243,7 @@ class EncryptedIntField(BaseEncryptedNumberField):
     max_raw_length = len(str(-sys.maxint - 1))
     number_type = int
     format_string = "%d"
-    def get_internal_type(self):
-        return "EncryptedIntField"
-
+    
     def formfield(self, **kwargs):
         defaults = {'form_class': forms.IntegerField}
         defaults.update(kwargs)
@@ -256,6 +254,7 @@ class EncryptedLongField(BaseEncryptedNumberField):
     max_raw_length = None  # no limit
     number_type = long
     format_string = "%d"
+    
     def formfield(self, **kwargs):
         defaults = {'form_class': forms.IntegerField}
         defaults.update(kwargs)
@@ -270,9 +269,7 @@ class EncryptedFloatField(BaseEncryptedNumberField):
     number_type = float
     # If this format is too long for some architectures, change it.
     format_string = "%0.66f"
-    def get_internal_type(self):
-        return "EncryptedFloatField"
-
+    
     def formfield(self, **kwargs):
         defaults = {'form_class': forms.FloatField}
         defaults.update(kwargs)
