@@ -8,6 +8,7 @@ import warnings
 from django import forms
 from django.forms import fields
 from django.db import models
+from django.contrib.admin import widgets
 from django.conf import settings
 from django.utils.encoding import smart_str, force_unicode
 from django.utils.translation import ugettext_lazy as _
@@ -137,7 +138,7 @@ class BaseEncryptedDateField(BaseEncryptedField):
         return 'CharField'
 
     def formfield(self, **kwargs):
-        defaults = {'widget': self.form_widget,'form_class':self.form_field}
+        defaults = {'widget': self.form_widget, 'form_class':self.form_field}
         defaults.update(kwargs)
         return super(BaseEncryptedDateField, self).formfield(**defaults)
 
@@ -172,8 +173,8 @@ class BaseEncryptedDateField(BaseEncryptedField):
 
 class EncryptedDateField(BaseEncryptedDateField):
     __metaclass__ = models.SubfieldBase
-    form_widget = forms.DateInput
     form_field = forms.DateField
+    form_widget = widgets.AdminDateWidget
     save_format = "%Y:%m:%d"
     date_class = datetime.date
     max_raw_length = 10  # YYYY:MM:DD
@@ -181,7 +182,7 @@ class EncryptedDateField(BaseEncryptedDateField):
     def formfield(self, **kwargs):
         from django.contrib.admin import widgets 
         defaults = {'form_class': forms.DateField, 
-                    'widget': widgets.AdminDateWidget()}
+                    'widget': }
         defaults.update(kwargs)
         return super(EncryptedDateField, self).formfield(**defaults)
 
@@ -189,18 +190,11 @@ class EncryptedDateField(BaseEncryptedDateField):
 class EncryptedDateTimeField(BaseEncryptedDateField):
     # FIXME:  This doesn't handle time zones, but Python doesn't really either.
     __metaclass__ = models.SubfieldBase
-    form_widget = forms.DateTimeInput
     form_field = forms.DateTimeField
+    form_widget = widgets.AdminDateTimeWidget
     save_format = "%Y:%m:%d:%H:%M:%S:%f"
     date_class = datetime.datetime
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
-
-    def formfield(self, **kwargs):
-        defaults = {'form_class': forms.DateTimeField}
-        defaults.update(kwargs)
-        return super(EncryptedDateTimeField, self).formfield(**defaults)
-
-
 
 class BaseEncryptedNumberField(BaseEncryptedField):
     # Do NOT define a __metaclass__ for this - it's abstract.
