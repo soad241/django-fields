@@ -179,13 +179,6 @@ class EncryptedDateField(BaseEncryptedDateField):
     date_class = datetime.date
     max_raw_length = 10  # YYYY:MM:DD
 
-    def formfield(self, **kwargs):
-        from django.contrib.admin import widgets 
-        defaults = {'form_class': forms.DateField, 
-                    'widget': }
-        defaults.update(kwargs)
-        return super(EncryptedDateField, self).formfield(**defaults)
-
 
 class EncryptedDateTimeField(BaseEncryptedDateField):
     # FIXME:  This doesn't handle time zones, but Python doesn't really either.
@@ -195,6 +188,8 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     save_format = "%Y:%m:%d:%H:%M:%S:%f"
     date_class = datetime.datetime
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
+
+
 
 class BaseEncryptedNumberField(BaseEncryptedField):
     # Do NOT define a __metaclass__ for this - it's abstract.
