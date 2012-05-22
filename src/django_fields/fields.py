@@ -347,7 +347,7 @@ class EncryptedFileField(models.FileField):
         super(EncryptedFileField, self).__init__(*args, **kwargs)
 
     def get_internal_type(self):
-        return "CharField"
+        return 'CharField'
 
     def formfield(self, **kwargs):
         defaults = {'form_class': forms.FileField}
