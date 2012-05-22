@@ -173,7 +173,8 @@ class EncryptedDateField(BaseEncryptedDateField):
     max_raw_length = 10  # YYYY:MM:DD
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': forms.DateField, 'widget': forms.DateTimeInput()}
+        from django.contrib.admin import widgets 
+        defaults = {'form_class': forms.DateField, 'widget': widgets.AdminDateWidget()}
         defaults.update(kwargs)
         return super(EncryptedDateField, self).formfield(**defaults)
 
