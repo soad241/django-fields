@@ -12,10 +12,12 @@ from django.conf import settings
 from django.utils.encoding import smart_str, force_unicode
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.db.models.fields.files import FieldFile
 
 if hasattr(settings, 'USE_CPICKLE'):
-    warnings.warn("The USE_CPICKLE options is now obsolete. cPickle will always "
-    "be used unless it cannot be found or DEBUG=True",DeprecationWarning)
+    warnings.warn(
+        "The USE_CPICKLE options is now obsolete. cPickle will always "
+        "be used unless it cannot be found or DEBUG=True", DeprecationWarning)
 
 if settings.DEBUG:
     import pickle
@@ -27,15 +29,19 @@ else:
 
 class BaseEncryptedField(models.Field):
     '''This code is based on the djangosnippet #1095
-       You can find the original at http://www.djangosnippets.org/snippets/1095/'''
+       You can find the original at 
+       http://www.djangosnippets.org/snippets/1095/'''
 
     def __init__(self, *args, **kwargs):
         self.cipher_type = kwargs.pop('cipher', 'AES')
         try:
-            imp = __import__('Crypto.Cipher', globals(), locals(), [self.cipher_type], -1)
+            imp = __import__('Crypto.Cipher', globals(), locals(), 
+                             [self.cipher_type], -1)
         except:
-            imp = __import__('Crypto.Cipher', globals(), locals(), [self.cipher_type])
-        self.cipher = getattr(imp, self.cipher_type).new(settings.SECRET_KEY[:32])
+            imp = __import__('Crypto.Cipher', globals(), locals(), 
+                             [self.cipher_type])
+        self.cipher = getattr(imp, self.cipher_type).new(
+            settings.SECRET_KEY[:32])
         self.prefix = '$%s$' % self.cipher_type
 
         max_length = kwargs.get('max_length', 40)
@@ -174,7 +180,8 @@ class EncryptedDateField(BaseEncryptedDateField):
 
     def formfield(self, **kwargs):
         from django.contrib.admin import widgets 
-        defaults = {'form_class': forms.DateField, 'widget': widgets.AdminDateWidget()}
+        defaults = {'form_class': forms.DateField, 
+                    'widget': widgets.AdminDateWidget()}
         defaults.update(kwargs)
         return super(EncryptedDateField, self).formfield(**defaults)
 
@@ -318,18 +325,79 @@ class EncryptedEmailField(BaseEncryptedField):
         return "CharField"
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': forms.EmailField, 'max_length': self.unencrypted_length}
+        defaults = {'form_class': forms.EmailField, 
+                    'max_length': self.unencrypted_length}
         defaults.update(kwargs)
         return super(EncryptedEmailField, self).formfield(**defaults)
 
+
+class EncryptedFieldFile(FieldFile):
+    def __init__(self, *args, **kwargs):
+        super(EncryptedFieldFile, self).__init__(*args, **kwargs)
+        self.name = self._get_clean_name()
+        
+    def _get_clean_name(self):
+        if self.field._is_encrypted(self.name):
+            return self.field.cipher.decrypt(
+                binascii.a2b_hex(self.name[len(self.field.prefix):])
+                ).split('\0')[0]
+        return self.name
+
+class EncryptedFileField(models.FileField):
+    description = _("File")
+    attr_class = EncryptedFieldFile
+    def __init__(self, *args, **kwargs):
+        self.cipher_type = kwargs.pop('cipher', 'AES')
+        try:
+            imp = __import__('Crypto.Cipher', globals(), locals(), 
+                             [self.cipher_type], -1)
+        except:
+            imp = __import__('Crypto.Cipher', globals(), locals(), 
+                             [self.cipher_type])
+        self.cipher = getattr(imp, self.cipher_type).new(
+            settings.SECRET_KEY[:32])
+        self.prefix = '$%s$' % self.cipher_type
+        kwargs['max_length'] = 520
+        super(EncryptedFileField, self).__init__(*args, **kwargs)
+
+    def get_internal_type(self):
+        return "CharField"
+
+    def formfield(self, **kwargs):
+        defaults = {'form_class': forms.FileField}
+        defaults.update(kwargs)
+        return super(EncryptedFileField, self).formfield(**defaults)
+
+    def _is_encrypted(self, value):
+        return isinstance(value, basestring) and value.startswith(self.prefix)
+
+    def _get_padding(self, value):
+        mod = (len(value) + 2) % self.cipher.block_size
+        return self.cipher.block_size - mod + 2
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        name = value.name
+        if not self._is_encrypted(name):
+            padding  = self._get_padding(name)
+            if padding > 0:
+                name += "\0" + ''.join([random.choice(string.printable)
+                    for index in range(padding-1)])
+            name = self.prefix + binascii.b2a_hex(self.cipher.encrypt(name))
+        value.name = name
+        return value
+        
 
 try:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([
         (
             [
-                BaseEncryptedField, EncryptedDateField, BaseEncryptedDateField, EncryptedCharField, EncryptedTextField,
-                EncryptedFloatField, EncryptedDateTimeField, BaseEncryptedNumberField, EncryptedIntField, EncryptedLongField,
+                BaseEncryptedField, EncryptedDateField, BaseEncryptedDateField,
+                EncryptedCharField, EncryptedTextField,
+                EncryptedFloatField, EncryptedDateTimeField,
+                BaseEncryptedNumberField, EncryptedIntField, EncryptedLongField,
                 EncryptedUSPhoneNumberField, EncryptedEmailField,
             ],
             [],
