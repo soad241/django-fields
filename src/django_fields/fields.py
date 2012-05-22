@@ -180,10 +180,12 @@ class EncryptedDateTimeField(BaseEncryptedDateField):
     max_raw_length = 26  # YYYY:MM:DD:hh:mm:ss:micros
 
 def validate_int(value):
+    print 'Validating int: %r' % value
     if not value.is_numeric():
         raise ValidationError(_('Please enter an integer'))
 
 def validate_float(value):
+    print 'Validating float: %r' % value
     try:
         float(value)
     except ValueError:
@@ -201,6 +203,7 @@ class BaseEncryptedNumberField(BaseEncryptedField):
             kwargs['validators'] += VALIDATORS[self.number_type]
         else:
             kwargs['validators'] = VALIDATORS[self.number_type]
+        print [val.__name__ for val in kwargs['validators']]
         super(BaseEncryptedNumberField, self).__init__(*args, **kwargs)
 
     def get_internal_type(self):
